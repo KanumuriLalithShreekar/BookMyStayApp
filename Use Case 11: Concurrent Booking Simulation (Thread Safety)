@@ -1,0 +1,94 @@
+import java.util.*;
+
+// Booking Request Class
+class BookingRequest {
+    String guestName;
+    int roomsRequested;
+
+    public BookingRequest(String guestName, int roomsRequested) {
+        this.guestName = guestName;
+        this.roomsRequested = roomsRequested;
+    }
+}
+
+// Shared Hotel Inventory
+class HotelInventory {
+    private int availableRooms;
+
+    public HotelInventory(int rooms) {
+        this.availableRooms = rooms;
+    }
+
+    // Critical Section (Thread-safe)
+    public synchronized boolean allocateRooms(String guestName, int rooms) {
+        if (rooms <= availableRooms) {
+            System.out.println(guestName + " booking " + rooms + " room(s).");
+            availableRooms -= rooms;
+            System.out.println("Rooms left: " + availableRooms);
+            return true;
+        } else {
+            System.out.println(guestName + " booking FAILED (Not enough rooms)");
+            return false;
+        }
+    }
+}
+
+// Booking Processor (Thread)
+class BookingProcessor extends Thread {
+    private Queue<BookingRequest> bookingQueue;
+    private HotelInventory inventory;
+
+    public BookingProcessor(Queue<BookingRequest> queue, HotelInventory inventory) {
+        this.bookingQueue = queue;
+        this.inventory = inventory;
+    }
+
+    @Override
+    public void run() {
+        while (true) {
+            BookingRequest request;
+
+            // Synchronize queue access (Critical Section)
+            synchronized (bookingQueue) {
+                if (bookingQueue.isEmpty()) {
+                    break;
+                }
+                request = bookingQueue.poll();
+            }
+
+            // Allocate rooms (Thread-safe method)
+            if (request != null) {
+                inventory.allocateRooms(request.guestName, request.roomsRequested);
+            }
+        }
+    }
+}
+
+// Main Class
+public class UseCase11ConcurrentBookingSimulation {
+    public static void main(String[] args) {
+
+        // Shared Queue
+        Queue<BookingRequest> bookingQueue = new LinkedList<>();
+
+        // Adding multiple requests (Simulating concurrent users)
+        bookingQueue.add(new BookingRequest("Guest A", 2));
+        bookingQueue.add(new BookingRequest("Guest B", 3));
+        bookingQueue.add(new BookingRequest("Guest C", 1));
+        bookingQueue.add(new BookingRequest("Guest D", 4));
+        bookingQueue.add(new BookingRequest("Guest E", 2));
+
+        // Shared Inventory (Total rooms = 7)
+        HotelInventory inventory = new HotelInventory(7);
+
+        // Multiple Threads (Concurrent Processors)
+        BookingProcessor t1 = new BookingProcessor(bookingQueue, inventory);
+        BookingProcessor t2 = new BookingProcessor(bookingQueue, inventory);
+        BookingProcessor t3 = new BookingProcessor(bookingQueue, inventory);
+
+        // Start threads
+        t1.start();
+        t2.start();
+        t3.start();
+    }
+}

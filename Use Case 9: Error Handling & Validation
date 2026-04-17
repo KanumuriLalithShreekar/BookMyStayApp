@@ -1,0 +1,91 @@
+import java.util.*;
+
+// Custom Exception for invalid booking scenarios
+class InvalidBookingException extends Exception {
+    public InvalidBookingException(String message) {
+        super(message);
+    }
+}
+
+// Simple Room model
+class Room {
+    String roomType;
+    int availableRooms;
+
+    public Room(String roomType, int availableRooms) {
+        this.roomType = roomType;
+        this.availableRooms = availableRooms;
+    }
+}
+
+// Validator class (core UC9 concept)
+class BookingValidator {
+
+    // Validate booking request
+    public void validateBooking(String requestedRoomType, Room room, int requestedRooms)
+            throws InvalidBookingException {
+
+        // 1. Validate room type
+        if (room == null || !room.roomType.equalsIgnoreCase(requestedRoomType)) {
+            throw new InvalidBookingException("Invalid room type selected!");
+        }
+
+        // 2. Validate availability
+        if (requestedRooms <= 0) {
+            throw new InvalidBookingException("Requested rooms must be greater than 0!");
+        }
+
+        // 3. Prevent negative inventory
+        if (requestedRooms > room.availableRooms) {
+            throw new InvalidBookingException("Not enough rooms available!");
+        }
+    }
+}
+
+// Main class
+public class UseCase9ErrorHandlingValidation {
+
+    public static void main(String[] args) {
+
+        Scanner sc = new Scanner(System.in);
+
+        // Sample inventory
+        Room deluxe = new Room("Deluxe", 5);
+        Room standard = new Room("Standard", 3);
+
+        BookingValidator validator = new BookingValidator();
+
+        try {
+            System.out.println("Enter room type (Deluxe/Standard): ");
+            String type = sc.nextLine();
+
+            System.out.println("Enter number of rooms: ");
+            int count = sc.nextInt();
+
+            Room selectedRoom = null;
+
+            if (type.equalsIgnoreCase("Deluxe")) {
+                selectedRoom = deluxe;
+            } else if (type.equalsIgnoreCase("Standard")) {
+                selectedRoom = standard;
+            }
+
+            // Validation step (UC9 core)
+            validator.validateBooking(type, selectedRoom, count);
+
+            // If validation passes → proceed booking
+            selectedRoom.availableRooms -= count;
+
+            System.out.println("Booking successful!");
+            System.out.println("Remaining rooms: " + selectedRoom.availableRooms);
+
+        } catch (InvalidBookingException e) {
+            System.out.println("Booking Failed: " + e.getMessage());
+
+        } catch (Exception e) {
+            System.out.println("Unexpected Error: " + e.getMessage());
+        }
+
+        sc.close();
+    }
+}

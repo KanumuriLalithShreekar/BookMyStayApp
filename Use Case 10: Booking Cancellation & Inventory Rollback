@@ -1,0 +1,104 @@
+import java.util.*;
+
+// Reservation model
+class Reservation {
+    String reservationId;
+    String roomType;
+    String roomId;
+    String status;
+
+    public Reservation(String reservationId, String roomType, String roomId) {
+        this.reservationId = reservationId;
+        this.roomType = roomType;
+        this.roomId = roomId;
+        this.status = "CONFIRMED";
+    }
+}
+
+// Cancellation service
+class CancellationService {
+
+    private Map<String, Reservation> reservationMap;
+    private Map<String, Integer> inventory;
+    private Stack<String> rollbackStack;
+
+    public CancellationService(Map<String, Reservation> reservationMap,
+                               Map<String, Integer> inventory,
+                               Stack<String> rollbackStack) {
+        this.reservationMap = reservationMap;
+        this.inventory = inventory;
+        this.rollbackStack = rollbackStack;
+    }
+
+    public void cancelBooking(String reservationId) {
+
+        // 1. Validate reservation exists
+        if (!reservationMap.containsKey(reservationId)) {
+            System.out.println("Cancellation Failed: Reservation not found!");
+            return;
+        }
+
+        Reservation res = reservationMap.get(reservationId);
+
+        // 2. Prevent double cancellation
+        if (res.status.equals("CANCELLED")) {
+            System.out.println("Cancellation Failed: Already cancelled!");
+            return;
+        }
+
+        // 3. Mark cancellation
+        res.status = "CANCELLED";
+
+        // 4. Push roomId into rollback stack (LIFO concept)
+        rollbackStack.push(res.roomId);
+
+        // 5. Restore inventory
+        inventory.put(res.roomType, inventory.get(res.roomType) + 1);
+
+        System.out.println("Cancellation successful for Reservation ID: " + reservationId);
+        System.out.println("Room released: " + res.roomId);
+    }
+}
+
+// Main class
+public class UseCase10BookingCancellation {
+
+    public static void main(String[] args) {
+
+        // Inventory setup
+        Map<String, Integer> inventory = new HashMap<>();
+        inventory.put("Deluxe", 2);
+        inventory.put("Standard", 3);
+
+        // Reservation storage
+        Map<String, Reservation> reservationMap = new HashMap<>();
+
+        // Rollback structure (LIFO)
+        Stack<String> rollbackStack = new Stack<>();
+
+        // Sample bookings
+        Reservation r1 = new Reservation("R1", "Deluxe", "D101");
+        Reservation r2 = new Reservation("R2", "Standard", "S201");
+
+        reservationMap.put(r1.reservationId, r1);
+        reservationMap.put(r2.reservationId, r2);
+
+        // Simulate cancellation service
+        CancellationService service =
+                new CancellationService(reservationMap, inventory, rollbackStack);
+
+        // Cancel bookings
+        service.cancelBooking("R1");
+        service.cancelBooking("R2");
+
+        // Try invalid cancellation
+        service.cancelBooking("R3");
+
+        System.out.println("\nRemaining Inventory:");
+        for (String key : inventory.keySet()) {
+            System.out.println(key + " -> " + inventory.get(key));
+        }
+
+        System.out.println("\nRollback Stack (LIFO order): " + rollbackStack);
+    }
+}

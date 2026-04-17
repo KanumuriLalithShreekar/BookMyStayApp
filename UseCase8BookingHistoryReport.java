@@ -1,0 +1,86 @@
+import java.util.ArrayList;
+import java.util.List;
+
+// Reservation class to store booking details
+class Reservation {
+    String reservationId;
+    String userId;
+    String roomId;
+    double amount;
+
+    public Reservation(String reservationId, String userId, String roomId, double amount) {
+        this.reservationId = reservationId;
+        this.userId = userId;
+        this.roomId = roomId;
+        this.amount = amount;
+    }
+
+    @Override
+    public String toString() {
+        return "ReservationID: " + reservationId +
+               ", UserID: " + userId +
+               ", RoomID: " + roomId +
+               ", Amount: " + amount;
+    }
+}
+
+// Service responsible for booking history
+class BookingHistory {
+    private List<Reservation> history = new ArrayList<>();
+
+    // Store confirmed reservation
+    public void addReservation(Reservation r) {
+        history.add(r);
+    }
+
+    // Retrieve all bookings
+    public List<Reservation> getAllReservations() {
+        return history;
+    }
+
+    // Generate simple report
+    public void generateReport() {
+        System.out.println("===== BOOKING REPORT =====");
+        System.out.println("Total Reservations: " + history.size());
+
+        double totalRevenue = 0;
+
+        for (Reservation r : history) {
+            System.out.println(r);
+            totalRevenue += r.amount;
+        }
+
+        System.out.println("Total Revenue: " + totalRevenue);
+        System.out.println("==========================");
+    }
+}
+
+// Main class
+public class UseCase8BookingHistoryReport {
+
+    public static void main(String[] args) {
+
+        BookingHistory bookingHistory = new BookingHistory();
+
+        // Simulating confirmed bookings
+        Reservation r1 = new Reservation("R001", "U101", "RM1", 2500);
+        Reservation r2 = new Reservation("R002", "U102", "RM2", 1800);
+        Reservation r3 = new Reservation("R003", "U103", "RM3", 3200);
+
+        // Add to history (after confirmation in UC7)
+        bookingHistory.addReservation(r1);
+        bookingHistory.addReservation(r2);
+        bookingHistory.addReservation(r3);
+
+        // Admin views history
+        System.out.println("=== ALL BOOKINGS ===");
+        for (Reservation r : bookingHistory.getAllReservations()) {
+            System.out.println(r);
+        }
+
+        System.out.println();
+
+        // Generate report
+        bookingHistory.generateReport();
+    }
+}

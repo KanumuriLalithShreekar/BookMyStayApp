@@ -1,0 +1,135 @@
+import java.io.*;
+import java.util.*;
+
+// Booking Class (Serializable)
+class Booking implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    String guestName;
+    int roomsBooked;
+
+    public Booking(String guestName, int roomsBooked) {
+        this.guestName = guestName;
+        this.roomsBooked = roomsBooked;
+    }
+
+    @Override
+    public String toString() {
+        return guestName + " booked " + roomsBooked + " room(s)";
+    }
+}
+
+// Hotel Inventory (Serializable)
+class HotelInventory implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    int availableRooms;
+
+    public HotelInventory(int rooms) {
+        this.availableRooms = rooms;
+    }
+
+    public void allocateRooms(int rooms) {
+        if (rooms <= availableRooms) {
+            availableRooms -= rooms;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Available Rooms: " + availableRooms;
+    }
+}
+
+// System State Wrapper (Serializable)
+class SystemState implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    List<Booking> bookings;
+    HotelInventory inventory;
+
+    public SystemState(List<Booking> bookings, HotelInventory inventory) {
+        this.bookings = bookings;
+        this.inventory = inventory;
+    }
+}
+
+// Persistence Service
+class PersistenceService {
+
+    private static final String FILE_NAME = "hotel_state.ser";
+
+    // Save State
+    public static void save(SystemState state) {
+        try (ObjectOutputStream oos =
+                     new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
+
+            oos.writeObject(state);
+            System.out.println("System state saved successfully.");
+
+        } catch (IOException e) {
+            System.out.println("Error saving state: " + e.getMessage());
+        }
+    }
+
+    // Load State
+    public static SystemState load() {
+        try (ObjectInputStream ois =
+                     new ObjectInputStream(new FileInputStream(FILE_NAME))) {
+
+            System.out.println("System state loaded successfully.");
+            return (SystemState) ois.readObject();
+
+        } catch (FileNotFoundException e) {
+            System.out.println("No previous state found. Starting fresh.");
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Corrupted data. Starting with safe defaults.");
+        }
+        return null;
+    }
+}
+
+// Main Class
+public class UseCase12DataPersistenceRecovery {
+
+    public static void main(String[] args) {
+
+        // Step 1: Try to recover previous state
+        SystemState state = PersistenceService.load();
+
+        List<Booking> bookings;
+        HotelInventory inventory;
+
+        if (state != null) {
+            bookings = state.bookings;
+            inventory = state.inventory;
+        } else {
+            // Fresh start
+            bookings = new ArrayList<>();
+            inventory = new HotelInventory(10);
+        }
+
+        // Step 2: Simulate new bookings
+        Booking b1 = new Booking("Guest A", 2);
+        Booking b2 = new Booking("Guest B", 3);
+
+        bookings.add(b1);
+        bookings.add(b2);
+
+        inventory.allocateRooms(2);
+        inventory.allocateRooms(3);
+
+        // Display current state
+        System.out.println("\n--- Current System State ---");
+        for (Booking b : bookings) {
+            System.out.println(b);
+        }
+        System.out.println(inventory);
+
+        // Step 3: Save state before shutdown
+        SystemState newState = new SystemState(bookings, inventory);
+        PersistenceService.save(newState);
+
+        System.out.println("\nSystem shutting down safely...");
+    }
+}
